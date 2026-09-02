@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 
 const DashboardLayout = () => {
   const { user, loading } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   if (loading) {
     return (
@@ -24,10 +25,14 @@ const DashboardLayout = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
-      <Sidebar />
+      {/* Sidebar (handles both desktop fixed and mobile slide-over drawer) */}
+      <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Navbar />
-        <main className="flex-1 overflow-y-auto p-6">
+        {/* Navbar with Hamburger button on mobile */}
+        <Navbar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Outlet />
         </main>
       </div>
