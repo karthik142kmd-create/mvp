@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import StatusBadge from '../../components/StatusBadge';
-import { downloadCertificatePDF, generateQRCodeDataUrl } from '../../services/pdfGenerator';
+import { downloadCertificatePDF, viewCertificatePDF, generateQRCodeDataUrl, getVerificationUrl } from '../../services/pdfGenerator';
 import {
   Search,
   CheckCircle2,
   XCircle,
   AlertTriangle,
   Download,
+  Eye,
   ShieldCheck,
   Scale,
   Building2,
@@ -21,14 +22,26 @@ const PublicVerifyPage = () => {
   const { certNo } = useParams();
   const navigate = useNavigate();
 
-  const [inputNo, setInputNo] = useState(certNo ? decodeURIComponent(certNo) : '');
+  const getEffectiveCertNo = () => {
+    if (certNo) return decodeURIComponent(certNo);
+    if (typeof window !== 'undefined' && window.location) {
+      const sp = new URLSearchParams(window.location.search);
+      return sp.get('verify') || sp.get('cert') || '';
+    }
+    return '';
+  };
+
+  const initialCertNo = getEffectiveCertNo();
+  const [inputNo, setInputNo] = useState(initialCertNo);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
   useEffect(() => {
-    if (certNo) {
-      handleSearch(decodeURIComponent(certNo));
+    const target = getEffectiveCertNo();
+    if (target) {
+      setInputNo(target);
+      handleSearch(target);
     }
   }, [certNo]);
 
@@ -151,7 +164,15 @@ const PublicVerifyPage = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => viewCertificatePDF(result)}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5"
+                    title="View Full Certificate PDF in browser"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>View PDF</span>
+                  </button>
                   <button
                     onClick={() => downloadCertificatePDF(result)}
                     className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5"
@@ -231,9 +252,19 @@ const PublicVerifyPage = () => {
                       <QrCode className="w-12 h-12 text-slate-400" />
                     </div>
                   )}
-                  <div>
-                    <span className="text-[11px] font-bold text-slate-600 block">Cryptographic QR Verification</span>
-                    <span className="text-[10px] text-slate-400">Scanned directly from physical scale seal tag</span>
+                  <div className="space-y-2 w-full">
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-600 block">Cryptographic QR Verification</span>
+                      <span className="text-[10px] text-slate-400">Scanned directly from physical scale seal tag</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => viewCertificatePDF(result)}
+                      className="w-full py-2 bg-white hover:bg-slate-50 text-blue-700 border border-blue-200 font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>View Certificate PDF</span>
+                    </button>
                   </div>
                 </div>
               </div>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import StatusBadge from '../../components/StatusBadge';
-import { Award, Download, CheckCircle2, XCircle } from 'lucide-react';
-import { downloadCertificatePDF } from '../../services/pdfGenerator';
+import { Award, Download, CheckCircle2, XCircle, Eye } from 'lucide-react';
+import { downloadCertificatePDF, viewCertificatePDF } from '../../services/pdfGenerator';
 
 const LmoHistory = () => {
   const [certificates, setCertificates] = useState([]);
@@ -52,10 +52,18 @@ const LmoHistory = () => {
                     <td className="py-3.5 px-4">
                       <StatusBadge status={cert.status} />
                     </td>
-                    <td className="py-3.5 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right space-x-2">
+                      <button
+                        onClick={() => viewCertificatePDF(cert)}
+                        className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
+                        title="View Certificate PDF in new tab"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>View PDF</span>
+                      </button>
                       <button
                         onClick={() => downloadCertificatePDF(cert)}
-                        className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
+                        className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>Download</span>

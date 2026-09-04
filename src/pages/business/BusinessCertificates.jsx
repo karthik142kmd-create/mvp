@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import StatusBadge from '../../components/StatusBadge';
-import { Award, Download, QrCode, Search, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { downloadCertificatePDF, generateQRCodeDataUrl } from '../../services/pdfGenerator';
+import { Award, Download, QrCode, Search, Eye } from 'lucide-react';
+import { downloadCertificatePDF, viewCertificatePDF, generateQRCodeDataUrl, getVerificationUrl } from '../../services/pdfGenerator';
 
 const BusinessCertificates = () => {
   const [certificates, setCertificates] = useState([]);
@@ -19,8 +18,8 @@ const BusinessCertificates = () => {
   }, []);
 
   const handleOpenQr = async (cert) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://legalmetrology.gov.in';
-    const qr = await generateQRCodeDataUrl(`${origin}/verify/${encodeURIComponent(cert.certificateNumber)}`);
+    const verifyUrl = getVerificationUrl(cert.certificateNumber);
+    const qr = await generateQRCodeDataUrl(verifyUrl);
     setSelectedQr({ ...cert, qrCodeData: qr || cert.qrCodeData });
   };
 
@@ -99,14 +98,14 @@ const BusinessCertificates = () => {
                         <span>Download PDF</span>
                       </button>
 
-                      <Link
-                        to={`/verify/${encodeURIComponent(cert.certificateNumber)}`}
-                        target="_blank"
+                      <button
+                        onClick={() => viewCertificatePDF(cert)}
                         className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
+                        title="View Certificate PDF in new tab"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Public Page</span>
-                      </Link>
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>View PDF</span>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -132,12 +131,31 @@ const BusinessCertificates = () => {
             )}
 
             <p className="text-xs text-slate-500">
-              Scan this QR code to verify certificate authenticity on the public registry.
+              Scan this QR code with any phone camera to verify and open this certificate.
             </p>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => viewCertificatePDF(selectedQr)}
+                className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>View PDF</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => downloadCertificatePDF(selectedQr)}
+                className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download PDF</span>
+              </button>
+            </div>
 
             <button
               onClick={() => setSelectedQr(null)}
-              className="w-full py-2 bg-slate-900 text-white font-bold rounded-xl text-xs"
+              className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs"
             >
               Close
             </button>

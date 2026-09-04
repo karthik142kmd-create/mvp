@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import StatusBadge from '../../components/StatusBadge';
-import { Award, Download, Search, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { downloadCertificatePDF } from '../../services/pdfGenerator';
+import { Award, Download, Search, Eye } from 'lucide-react';
+import { downloadCertificatePDF, viewCertificatePDF } from '../../services/pdfGenerator';
 
 const AdminCertificates = () => {
   const [certificates, setCertificates] = useState([]);
@@ -72,18 +71,19 @@ const AdminCertificates = () => {
                       <button
                         onClick={() => downloadCertificatePDF(cert)}
                         className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
+                        title="Download Certificate PDF"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>PDF</span>
                       </button>
-                      <Link
-                        to={`/verify/${encodeURIComponent(cert.certificateNumber)}`}
-                        target="_blank"
+                      <button
+                        onClick={() => viewCertificatePDF(cert)}
                         className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
+                        title="View Certificate PDF in new tab"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Public View</span>
-                      </Link>
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>View PDF</span>
+                      </button>
                     </td>
                   </tr>
                 ))}

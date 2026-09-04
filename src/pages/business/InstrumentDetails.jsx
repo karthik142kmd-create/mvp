@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import StatusBadge from '../../components/StatusBadge';
-import { ArrowLeft, Scale, Calendar, MapPin, Award, FileText, QrCode, Download } from 'lucide-react';
-import { downloadCertificatePDF } from '../../services/pdfGenerator';
+import { ArrowLeft, Scale, Calendar, MapPin, Award, FileText, QrCode, Download, Eye } from 'lucide-react';
+import { downloadCertificatePDF, viewCertificatePDF } from '../../services/pdfGenerator';
 
 const InstrumentDetails = () => {
   const { id } = useParams();
@@ -110,14 +110,22 @@ const InstrumentDetails = () => {
                   <p className="font-mono font-bold text-slate-900">{cert.certificateNumber}</p>
                   <p className="text-[11px] text-slate-500">Issued: {cert.issueDate} • Valid Until: {cert.validUntil}</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <StatusBadge status={cert.status} />
                   <button
+                    onClick={() => viewCertificatePDF(cert)}
+                    className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold rounded-lg transition-colors flex items-center gap-1 text-xs"
+                    title="View Certificate PDF in new tab"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>View PDF</span>
+                  </button>
+                  <button
                     onClick={() => downloadCertificatePDF(cert)}
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg transition-colors flex items-center gap-1 text-xs"
+                    className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg transition-colors flex items-center gap-1 text-xs"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>Download PDF</span>
+                    <span>Download</span>
                   </button>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Scale,
@@ -18,6 +18,16 @@ import {
 const LandingPage = () => {
   const [certInput, setCertInput] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location) {
+      const params = new URLSearchParams(window.location.search);
+      const verifyParam = params.get('verify') || params.get('cert');
+      if (verifyParam && verifyParam.trim()) {
+        navigate(`/verify/${encodeURIComponent(verifyParam.trim())}`, { replace: true });
+      }
+    }
+  }, [navigate]);
 
   const handleVerifySubmit = (e) => {
     e.preventDefault();

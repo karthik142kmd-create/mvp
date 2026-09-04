@@ -3,14 +3,15 @@ import QRCode from 'qrcode';
 
 /**
  * Returns the public verification URL for a given certificate number.
- * Uses window.location.origin so on Netlify it points directly to the deployed site's /verify/:certNo route.
+ * Uses `/?verify=...` on window.location.origin so static hosting (like Netlify)
+ * always serves the root index.html with HTTP 200, completely preventing 404 errors.
  */
 export const getVerificationUrl = (certNumber) => {
   let origin = 'https://legalmetrology.gov.in';
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
     origin = window.location.origin;
   }
-  return `${origin}/verify/${encodeURIComponent(certNumber)}`;
+  return `${origin}/?verify=${encodeURIComponent(certNumber)}`;
 };
 
 /**
@@ -34,12 +35,10 @@ export const generateQRCodeDataUrl = async (text) => {
 };
 
 /**
- * Downloads an official Government of India / State Legal Metrology certificate PDF.
- * Formatted with reduced, professional font sizes for tabular details and a scannable QR code
- * that opens the live certificate on mobile phones.
+ * Builds the jsPDF document object for the official certificate.
  */
-export const downloadCertificatePDF = async (cert) => {
-  if (!cert) return;
+export const buildCertificateDoc = async (cert) => {
+  if (!cert) return null;
 
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -393,7 +392,32 @@ export const downloadCertificatePDF = async (cert) => {
   doc.setFontSize(6.2);
   doc.textWithLink(verifyUrl, 105, 284.5, { url: verifyUrl, align: 'center' });
 
-  // Trigger browser download
+  return doc;
+};
+
+/**
+ * Directly downloads the certificate PDF.
+ */
+export const downloadCertificatePDF = async (cert) => {
+  const doc = await buildCertificateDoc(cert);
+  if (!doc) return;
+  const certificateNumber = cert.certificateNumber || 'CERT-LM-2026-0001';
   const filename = `LegalMetrology_Certificate_${certificateNumber.replace(/[\/\\]/g, '_')}.pdf`;
   doc.save(filename);
+};
+
+/**
+ * Opens the certificate PDF directly in a new browser tab/window via a client-side Blob URL.
+ * Works 100% offline, zero network requests, and eliminates any 404 navigation error.
+ */
+export const viewCertificatePDF = async (cert) => {
+  try {
+    const doc = await buildCertificateDoc(cert);
+    if (!doc) return;
+    const blob = doc.output('blob');
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank');
+  } catch (err) {
+    console.error('Error viewing certificate PDF:', err);
+  }
 };

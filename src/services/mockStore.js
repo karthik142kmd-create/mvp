@@ -225,10 +225,14 @@ const getLiveOrigin = () => {
     : 'https://legalmetrology.gov.in';
 };
 
+const getVerifyUrl = (certNumber) => {
+  return `${getLiveOrigin()}/?verify=${encodeURIComponent(certNumber)}`;
+};
+
 const createInitialCertificates = async () => {
   const origin = getLiveOrigin();
-  const qr1 = await generateQR(`${origin}/verify/CERT-LM-2025-8821`);
-  const qr2 = await generateQR(`${origin}/verify/CERT-LM-2025-7732`);
+  const qr1 = await generateQR(getVerifyUrl('CERT-LM-2025-8821'));
+  const qr2 = await generateQR(getVerifyUrl('CERT-LM-2025-7732'));
 
   return [
     {
@@ -413,9 +417,10 @@ export const getStoredCertificates = async () => {
   if (existing.length > 0) {
     let needsUpdate = false;
     for (const c of existing) {
-      if (!c.qrCodeData || c._origin !== origin) {
-        c.qrCodeData = await generateQR(`${origin}/verify/${encodeURIComponent(c.certificateNumber)}`);
+      if (!c.qrCodeData || c._origin !== origin || !c._hasQueryUrl) {
+        c.qrCodeData = await generateQR(getVerifyUrl(c.certificateNumber));
         c._origin = origin;
+        c._hasQueryUrl = true;
         c.verified = true;
         needsUpdate = true;
       }
@@ -528,7 +533,7 @@ export const handleMockGet = async (endpoint) => {
       };
     }
     const origin = getLiveOrigin();
-    const liveQr = await generateQR(`${origin}/verify/${encodeURIComponent(match.certificateNumber)}`);
+    const liveQr = await generateQR(getVerifyUrl(match.certificateNumber));
     return {
       ...match,
       verified: true,
@@ -607,7 +612,7 @@ export const handleMockPost = async (endpoint, body) => {
     const app = apps.find((a) => a.id === appId || a.applicationId === appId) || apps[0];
     const certNumber = `CERT-LM-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     const origin = getLiveOrigin();
-    const qrData = await generateQR(`${origin}/verify/${encodeURIComponent(certNumber)}`);
+    const qrData = await generateQR(getVerifyUrl(certNumber));
 
     const newCertificate = {
       id: 'cert-' + Date.now(),
