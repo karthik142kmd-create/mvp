@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import StatusBadge from '../../components/StatusBadge';
 import { ArrowLeft, Scale, Calendar, MapPin, Award, FileText, QrCode, Download } from 'lucide-react';
+import { downloadCertificatePDF } from '../../services/pdfGenerator';
 
 const InstrumentDetails = () => {
   const { id } = useParams();
@@ -111,15 +112,13 @@ const InstrumentDetails = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <StatusBadge status={cert.status} />
-                  <a
-                    href={`/api/certificates/${cert.id}/pdf`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg transition-colors flex items-center gap-1"
+                  <button
+                    onClick={() => downloadCertificatePDF(cert)}
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-lg transition-colors flex items-center gap-1 text-xs"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Download PDF</span>
-                  </a>
+                  </button>
                 </div>
               </div>
             ))}

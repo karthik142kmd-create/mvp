@@ -14,7 +14,9 @@ import {
   ArrowLeft,
   Award,
   AlertTriangle,
+  Download,
 } from 'lucide-react';
+import { downloadCertificatePDF } from '../../services/pdfGenerator';
 
 const FieldVerificationPage = () => {
   const { id } = useParams();
@@ -150,14 +152,12 @@ const FieldVerificationPage = () => {
           )}
 
           <div className="flex gap-2 pt-2">
-            <a
-              href={`/api/certificates/${issuedCert.id}/pdf`}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={() => downloadCertificatePDF(issuedCert)}
               className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-1"
             >
               <span>Download PDF</span>
-            </a>
+            </button>
             <button
               onClick={() => navigate('/lmo/history')}
               className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs"

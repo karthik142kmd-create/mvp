@@ -52,7 +52,7 @@ export const api = {
       });
       return await handleResponse(res);
     } catch (err) {
-      const mock = handleMockGet(endpoint);
+      const mock = await handleMockGet(endpoint);
       if (mock !== null) return mock;
       throw err;
     }
@@ -70,7 +70,7 @@ export const api = {
       });
       return await handleResponse(res);
     } catch (err) {
-      const mock = handleMockPost(endpoint, body);
+      const mock = await handleMockPost(endpoint, body);
       if (mock !== null) return mock;
       throw err;
     }

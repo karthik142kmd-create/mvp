@@ -3,6 +3,7 @@ import { api } from '../../services/api';
 import StatusBadge from '../../components/StatusBadge';
 import { Award, Download, Search, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { downloadCertificatePDF } from '../../services/pdfGenerator';
 
 const AdminCertificates = () => {
   const [certificates, setCertificates] = useState([]);
@@ -68,15 +69,13 @@ const AdminCertificates = () => {
                     <td className="py-3.5 px-4 text-slate-700">{cert.officer?.name}</td>
                     <td className="py-3.5 px-4 font-semibold text-emerald-700">{cert.validUntil}</td>
                     <td className="py-3.5 px-4 text-right space-x-2">
-                      <a
-                        href={`/api/certificates/${cert.id}/pdf`}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        onClick={() => downloadCertificatePDF(cert)}
                         className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>PDF</span>
-                      </a>
+                      </button>
                       <Link
                         to={`/verify/${encodeURIComponent(cert.certificateNumber)}`}
                         target="_blank"

@@ -3,6 +3,7 @@ import { api } from '../../services/api';
 import StatusBadge from '../../components/StatusBadge';
 import { Award, Download, QrCode, Search, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { downloadCertificatePDF, generateQRCodeDataUrl } from '../../services/pdfGenerator';
 
 const BusinessCertificates = () => {
   const [certificates, setCertificates] = useState([]);
@@ -17,19 +18,30 @@ const BusinessCertificates = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  const handleOpenQr = async (cert) => {
+    if (!cert.qrCodeData) {
+      const origin = window.location.origin;
+      const qr = await generateQRCodeDataUrl(`${origin}/verify/${encodeURIComponent(cert.certificateNumber)}`);
+      setSelectedQr({ ...cert, qrCodeData: qr });
+    } else {
+      setSelectedQr(cert);
+    }
+  };
+
   const filtered = certificates.filter(
     (c) =>
       c.certificateNumber.toLowerCase().includes(search.toLowerCase()) ||
-      c.instrument?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      c.instrument?.serialNumber?.toLowerCase().includes(search.toLowerCase())
+      c.instrument?.name?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">My Stamping Certificates</h1>
-          <p className="text-xs text-slate-500 mt-1">Official digitally authenticated Legal Metrology verification certificates.</p>
+          <h1 className="text-2xl font-black text-slate-900">Verification Certificates & Stamping Records</h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Download statutory certificates & access cryptographic QR codes for commercial display.
+          </p>
         </div>
       </div>
 
@@ -40,7 +52,7 @@ const BusinessCertificates = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search Certificate No, Instrument, Serial..."
+            placeholder="Search Certificate Number, Instrument Name..."
             className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -48,18 +60,18 @@ const BusinessCertificates = () => {
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-xs text-slate-500">Loading certificates vault...</div>
+          <div className="p-12 text-center text-xs text-slate-500">Loading digital certificates...</div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center text-xs text-slate-400">No certificates found.</div>
+          <div className="p-12 text-center text-xs text-slate-400">No active certificates found.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-4">Certificate Number</th>
-                  <th className="py-3 px-4">Instrument Specifications</th>
+                  <th className="py-3 px-4">Certificate ID</th>
+                  <th className="py-3 px-4">Instrument Specification</th>
                   <th className="py-3 px-4">Issue Date</th>
-                  <th className="py-3 px-4">Valid Until</th>
+                  <th className="py-3 px-4">Expiry Date</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
@@ -68,33 +80,28 @@ const BusinessCertificates = () => {
                 {filtered.map((cert) => (
                   <tr key={cert.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{cert.certificateNumber}</td>
-                    <td className="py-3.5 px-4 font-medium text-slate-900">
-                      <div>{cert.instrument?.name}</div>
-                      <div className="text-[10px] text-slate-500">SN: {cert.instrument?.serialNumber}</div>
-                    </td>
+                    <td className="py-3.5 px-4 font-medium text-slate-900">{cert.instrument?.name}</td>
                     <td className="py-3.5 px-4 text-slate-700">{cert.issueDate}</td>
-                    <td className="py-3.5 px-4 font-semibold text-emerald-700">{cert.validUntil}</td>
+                    <td className="py-3.5 px-4 text-emerald-700 font-semibold">{cert.validUntil}</td>
                     <td className="py-3.5 px-4">
                       <StatusBadge status={cert.status} />
                     </td>
                     <td className="py-3.5 px-4 text-right space-x-2">
                       <button
-                        onClick={() => setSelectedQr(cert)}
+                        onClick={() => handleOpenQr(cert)}
                         className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
                       >
                         <QrCode className="w-3.5 h-3.5" />
                         <span>QR Code</span>
                       </button>
 
-                      <a
-                        href={`/api/certificates/${cert.id}/pdf`}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        onClick={() => downloadCertificatePDF(cert)}
                         className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
                       >
                         <Download className="w-3.5 h-3.5" />
                         <span>Download PDF</span>
-                      </a>
+                      </button>
 
                       <Link
                         to={`/verify/${encodeURIComponent(cert.certificateNumber)}`}

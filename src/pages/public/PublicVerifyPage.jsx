@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import StatusBadge from '../../components/StatusBadge';
+import { downloadCertificatePDF, generateQRCodeDataUrl } from '../../services/pdfGenerator';
 import {
   Search,
   CheckCircle2,
@@ -37,6 +38,9 @@ const PublicVerifyPage = () => {
     setSearched(true);
     try {
       const data = await api.get(`/certificates/verify/${encodeURIComponent(queryNumber.trim())}`);
+      if (data && !data.qrCodeData) {
+        data.qrCodeData = await generateQRCodeDataUrl(window.location.href);
+      }
       setResult(data);
     } catch (err) {
       setResult({
@@ -143,7 +147,16 @@ const PublicVerifyPage = () => {
                   </div>
                 </div>
 
-                <StatusBadge status={result.status} />
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => downloadCertificatePDF(result)}
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Download PDF</span>
+                  </button>
+                  <StatusBadge status={result.status} />
+                </div>
               </div>
 
               {/* Certificate Details Body */}
