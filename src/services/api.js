@@ -5,6 +5,29 @@ const getAuthHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+const handleResponse = async (res) => {
+  let data = null;
+  const text = await res.text();
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { message: text };
+    }
+  }
+
+  if (!res.ok) {
+    const errorMsg =
+      data?.message ||
+      (res.status === 500 || res.status === 502 || res.status === 504
+        ? 'Cannot connect to backend server. Please make sure the backend is running on port 5000.'
+        : `Request failed with status ${res.status}`);
+    throw new Error(errorMsg);
+  }
+
+  return data;
+};
+
 export const api = {
   async get(endpoint) {
     const res = await fetch(`${API_BASE}${endpoint}`, {
@@ -13,9 +36,7 @@ export const api = {
         ...getAuthHeaders(),
       },
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'API Request Failed');
-    return data;
+    return handleResponse(res);
   },
 
   async post(endpoint, body) {
@@ -27,9 +48,7 @@ export const api = {
       headers,
       body: isFormData ? body : JSON.stringify(body),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'API Request Failed');
-    return data;
+    return handleResponse(res);
   },
 
   async put(endpoint, body) {
@@ -41,9 +60,7 @@ export const api = {
       headers,
       body: isFormData ? body : JSON.stringify(body),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'API Request Failed');
-    return data;
+    return handleResponse(res);
   },
 
   async delete(endpoint) {
@@ -54,8 +71,6 @@ export const api = {
         ...getAuthHeaders(),
       },
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'API Request Failed');
-    return data;
+    return handleResponse(res);
   },
 };
