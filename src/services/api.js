@@ -1,3 +1,5 @@
+import { handleMockGet, handleMockPost } from './mockStore';
+
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const getAuthHeaders = () => {
@@ -25,11 +27,15 @@ const handleResponse = async (res) => {
         : res.status === 404
         ? 'Backend API endpoint not found (404).'
         : `Request failed with status ${res.status}`);
-    throw new Error(errorMsg);
+    const err = new Error(errorMsg);
+    err.status = res.status;
+    throw err;
   }
 
   if (!data && text && text.trim().startsWith('<')) {
-    throw new Error('Received HTML instead of JSON from API. Backend server may be offline or misconfigured.');
+    const err = new Error('Received HTML instead of JSON from API.');
+    err.status = 404;
+    throw err;
   }
 
   return data;
@@ -37,47 +43,70 @@ const handleResponse = async (res) => {
 
 export const api = {
   async get(endpoint) {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(),
-      },
-    });
-    return handleResponse(res);
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+      });
+      return await handleResponse(res);
+    } catch (err) {
+      const mock = handleMockGet(endpoint);
+      if (mock !== null) return mock;
+      throw err;
+    }
   },
 
   async post(endpoint, body) {
-    const isFormData = body instanceof FormData;
-    const headers = isFormData ? getAuthHeaders() : { 'Content-Type': 'application/json', ...getAuthHeaders() };
+    try {
+      const isFormData = body instanceof FormData;
+      const headers = isFormData ? getAuthHeaders() : { 'Content-Type': 'application/json', ...getAuthHeaders() };
 
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      method: 'POST',
-      headers,
-      body: isFormData ? body : JSON.stringify(body),
-    });
-    return handleResponse(res);
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body: isFormData ? body : JSON.stringify(body),
+      });
+      return await handleResponse(res);
+    } catch (err) {
+      const mock = handleMockPost(endpoint, body);
+      if (mock !== null) return mock;
+      throw err;
+    }
   },
 
   async put(endpoint, body) {
-    const isFormData = body instanceof FormData;
-    const headers = isFormData ? getAuthHeaders() : { 'Content-Type': 'application/json', ...getAuthHeaders() };
+    try {
+      const isFormData = body instanceof FormData;
+      const headers = isFormData ? getAuthHeaders() : { 'Content-Type': 'application/json', ...getAuthHeaders() };
 
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      method: 'PUT',
-      headers,
-      body: isFormData ? body : JSON.stringify(body),
-    });
-    return handleResponse(res);
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'PUT',
+        headers,
+        body: isFormData ? body : JSON.stringify(body),
+      });
+      return await handleResponse(res);
+    } catch (err) {
+      if (endpoint.includes('/notifications/') && endpoint.includes('/read')) {
+        return { message: 'Notification marked as read.' };
+      }
+      throw err;
+    }
   },
 
   async delete(endpoint) {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(),
-      },
-    });
-    return handleResponse(res);
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+      });
+      return await handleResponse(res);
+    } catch (err) {
+      throw err;
+    }
   },
 };
