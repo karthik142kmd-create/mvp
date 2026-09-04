@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('lm_token');
@@ -7,12 +7,13 @@ const getAuthHeaders = () => {
 
 const handleResponse = async (res) => {
   let data = null;
-  const text = await res.text();
-  if (text) {
+  const text = await res.text().catch(() => '');
+
+  if (text && text.trim()) {
     try {
       data = JSON.parse(text);
     } catch {
-      data = { message: text };
+      data = null;
     }
   }
 
@@ -20,9 +21,15 @@ const handleResponse = async (res) => {
     const errorMsg =
       data?.message ||
       (res.status === 500 || res.status === 502 || res.status === 504
-        ? 'Cannot connect to backend server. Please make sure the backend is running on port 5000.'
+        ? 'Cannot connect to backend server. Please make sure the backend is running.'
+        : res.status === 404
+        ? 'Backend API endpoint not found (404).'
         : `Request failed with status ${res.status}`);
     throw new Error(errorMsg);
+  }
+
+  if (!data && text && text.trim().startsWith('<')) {
+    throw new Error('Received HTML instead of JSON from API. Backend server may be offline or misconfigured.');
   }
 
   return data;
