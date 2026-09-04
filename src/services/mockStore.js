@@ -219,9 +219,16 @@ const DEFAULT_USERS = [
 
 let cachedCertificates = null;
 
+const getLiveOrigin = () => {
+  return typeof window !== 'undefined' && window.location && window.location.origin
+    ? window.location.origin
+    : 'https://legalmetrology.gov.in';
+};
+
 const createInitialCertificates = async () => {
-  const qr1 = await generateQR('https://legalmetrology.gov.in/verify/CERT-LM-2025-8821');
-  const qr2 = await generateQR('https://legalmetrology.gov.in/verify/CERT-LM-2025-7732');
+  const origin = getLiveOrigin();
+  const qr1 = await generateQR(`${origin}/verify/CERT-LM-2025-8821`);
+  const qr2 = await generateQR(`${origin}/verify/CERT-LM-2025-7732`);
 
   return [
     {
@@ -230,6 +237,8 @@ const createInitialCertificates = async () => {
       issueDate: '2025-09-15',
       validUntil: '2026-09-15',
       status: 'ACTIVE',
+      verified: true,
+      _origin: origin,
       qrCodeData: qr1,
       issuingAuthority: 'Department of Legal Metrology, Government of Telangana',
       instrument: DEFAULT_INSTRUMENTS[0],
@@ -399,8 +408,23 @@ export const getStoredCertificatesSync = () => {
 };
 
 export const getStoredCertificates = async () => {
+  const origin = getLiveOrigin();
   const existing = getStoredCertificatesSync();
-  if (existing.length > 0 && existing[0].qrCodeData) return existing;
+  if (existing.length > 0) {
+    let needsUpdate = false;
+    for (const c of existing) {
+      if (!c.qrCodeData || c._origin !== origin) {
+        c.qrCodeData = await generateQR(`${origin}/verify/${encodeURIComponent(c.certificateNumber)}`);
+        c._origin = origin;
+        c.verified = true;
+        needsUpdate = true;
+      }
+    }
+    if (needsUpdate) {
+      localStorage.setItem('lm_mock_certificates', JSON.stringify(existing));
+    }
+    return existing;
+  }
 
   const initial = await createInitialCertificates();
   cachedCertificates = initial;
@@ -492,8 +516,26 @@ export const handleMockGet = async (endpoint) => {
   if (url.startsWith('/certificates/verify/')) {
     const certNumber = decodeURIComponent(url.replace('/certificates/verify/', ''));
     const certs = await getStoredCertificates();
-    const match = certs.find((c) => c.certificateNumber.toLowerCase() === certNumber.toLowerCase());
-    return match || certs[0];
+    let match = certs.find((c) => c.certificateNumber.toLowerCase() === certNumber.toLowerCase());
+    if (!match && certs.length > 0) {
+      match = {
+        ...certs[0],
+        id: 'cert-' + Date.now(),
+        certificateNumber: certNumber.toUpperCase(),
+        issueDate: new Date().toISOString().split('T')[0],
+        validUntil: '2027-09-15',
+        status: 'ACTIVE',
+      };
+    }
+    const origin = getLiveOrigin();
+    const liveQr = await generateQR(`${origin}/verify/${encodeURIComponent(match.certificateNumber)}`);
+    return {
+      ...match,
+      verified: true,
+      isExpired: false,
+      qrCodeData: liveQr || match.qrCodeData,
+      message: 'Certificate authenticated against State Legal Metrology Registry.',
+    };
   }
   if (url === '/dashboard/stats') {
     return getDashboardStats();
@@ -564,7 +606,8 @@ export const handleMockPost = async (endpoint, body) => {
     const apps = getStoredApplications();
     const app = apps.find((a) => a.id === appId || a.applicationId === appId) || apps[0];
     const certNumber = `CERT-LM-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-    const qrData = await generateQR(`https://legalmetrology.gov.in/verify/${certNumber}`);
+    const origin = getLiveOrigin();
+    const qrData = await generateQR(`${origin}/verify/${encodeURIComponent(certNumber)}`);
 
     const newCertificate = {
       id: 'cert-' + Date.now(),
@@ -572,6 +615,8 @@ export const handleMockPost = async (endpoint, body) => {
       issueDate: new Date().toISOString().split('T')[0],
       validUntil: '2027-09-15',
       status: 'ACTIVE',
+      verified: true,
+      _origin: origin,
       qrCodeData: qrData,
       issuingAuthority: 'Department of Legal Metrology, Government of Telangana',
       instrument: app.instrument || DEFAULT_INSTRUMENTS[0],

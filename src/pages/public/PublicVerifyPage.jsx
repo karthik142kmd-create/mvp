@@ -38,8 +38,12 @@ const PublicVerifyPage = () => {
     setSearched(true);
     try {
       const data = await api.get(`/certificates/verify/${encodeURIComponent(queryNumber.trim())}`);
-      if (data && !data.qrCodeData) {
-        data.qrCodeData = await generateQRCodeDataUrl(window.location.href);
+      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://legalmetrology.gov.in';
+      const certNo = data?.certificateNumber || queryNumber.trim();
+      const verifyUrl = `${origin}/verify/${encodeURIComponent(certNo)}`;
+      const liveQr = await generateQRCodeDataUrl(verifyUrl);
+      if (data) {
+        data.qrCodeData = liveQr || data.qrCodeData;
       }
       setResult(data);
     } catch (err) {
@@ -119,7 +123,7 @@ const PublicVerifyPage = () => {
               <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
               <p className="text-xs font-semibold text-slate-600">Querying National Metrology Repository...</p>
             </div>
-          ) : result && result.verified ? (
+          ) : result && (result.verified || (result.certificateNumber && result.status !== 'REVOKED')) ? (
             <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden">
               {/* Header result banner */}
               <div

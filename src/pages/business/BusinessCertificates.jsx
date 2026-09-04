@@ -19,13 +19,9 @@ const BusinessCertificates = () => {
   }, []);
 
   const handleOpenQr = async (cert) => {
-    if (!cert.qrCodeData) {
-      const origin = window.location.origin;
-      const qr = await generateQRCodeDataUrl(`${origin}/verify/${encodeURIComponent(cert.certificateNumber)}`);
-      setSelectedQr({ ...cert, qrCodeData: qr });
-    } else {
-      setSelectedQr(cert);
-    }
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://legalmetrology.gov.in';
+    const qr = await generateQRCodeDataUrl(`${origin}/verify/${encodeURIComponent(cert.certificateNumber)}`);
+    setSelectedQr({ ...cert, qrCodeData: qr || cert.qrCodeData });
   };
 
   const filtered = certificates.filter(
